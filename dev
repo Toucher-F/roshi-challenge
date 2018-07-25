@@ -1,0 +1,11 @@
+[proxy]
+proxy01
+
+[roshi]
+roshi01
+
+[redis]
+redis01
+
+[control]
+control ansible_connection=local
