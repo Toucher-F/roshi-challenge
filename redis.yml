@@ -1,0 +1,11 @@
+---
+- hosts: redis
+  become: true
+  gather_facts: false
+  tasks:
+    - name: install redis
+      apt: name={{item}} state=present
+      with_items:
+        - golang-go
+        - jq
+      tags: [ 'packages' ]

@@ -1,0 +1,48 @@
+---
+- hosts: roshi
+  become: true
+  gather_facts: false
+  tasks:
+    - name: install web components
+      apt: name={{item}} state=present
+      with_items:
+        - golang-go
+        - jq
+      tags: [ 'packages' ]
+
+    - name: add go env variable
+      blockinfile:
+        dest: /root/.bashrc
+        block: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+      tags: [ 'configure' ]
+
+    - name: download roshi
+      git:
+        repo: "https://github.com/soundcloud/roshi.git"
+        dest: /src/roshi
+      tags: [ 'configure' ]
+
+    - name: copy dependency folders
+      copy:
+        src: /src/roshi/{{item}}
+        dest: /src/roshi/_vendor/src/github.com/soundcloud/roshi/
+      with_items:
+        - common
+        - farm
+        - instrumentation
+        - pool
+        - cluster
+      tags: [ 'configure' ]
+
+    - name:  install roshi
+      command: chdir=/src/roshi/roshi-server make
+      tags: [ 'configure' ]
+
+    - name: add roshi-server env variable
+      lineinfile:
+        dest: /root/.bashrc
+        line: 'export PATH=/src/roshi/roshi-server:$PATH'
+        insertbefore: EOF
+      tags: [ 'configure' ]
