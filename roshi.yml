@@ -22,7 +22,7 @@
       git:
         repo: "https://github.com/soundcloud/roshi.git"
         dest: /src/roshi
-      tags: [ 'configure' ]
+      tags: [ 'packages' ]
 
     - name: copy dependency folders
       copy:
@@ -46,3 +46,6 @@
         line: 'export PATH=/src/roshi/roshi-server:$PATH'
         insertbefore: EOF
       tags: [ 'configure' ]
+
+    - name: start roshi
+      command: roshi-server -redis.instances=localhost:6379
