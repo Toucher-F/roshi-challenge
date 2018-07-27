@@ -1,0 +1,43 @@
+---
+# tasks file for roshi-build
+- name: install web components
+  apt: name={{item}} state=present
+  with_items:
+    - golang-go
+    - jq
+    - zip
+  tags: [ 'packages' ]
+
+- name: add go env variable
+  blockinfile:
+    dest: /root/.bashrc
+    block: |
+      export GOPATH=$HOME/go
+      export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+  tags: [ 'configure' ]
+
+- name: source bashrc
+  shell: . /root/.bashrc
+
+
+- name: download roshi
+  git:
+    repo: "https://github.com/soundcloud/roshi.git"
+    dest: /src/roshi
+  tags: [ 'packages' ]
+
+- name: copy dependency folders
+  copy:
+    src: /src/roshi/{{item}}
+    dest: /src/roshi/_vendor/src/github.com/soundcloud/roshi/
+  with_items:
+    - common
+    - farm
+    - instrumentation
+    - pool
+    - cluster
+  tags: [ 'configure' ]
+
+- name:  make roshi
+  command: chdir=/src/roshi/roshi-server make
+  tags: [ 'configure' ]

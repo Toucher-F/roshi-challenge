@@ -1,0 +1,6 @@
+---
+- hosts: roshi
+  become: true
+  gather_facts: false
+  roles:
+    - roshi-deploy

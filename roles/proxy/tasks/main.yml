@@ -1,2 +1,24 @@
 ---
 # tasks file for proxy
+- name: install nginx
+  apt: name=nginx state=present
+  tags: [ 'packages' ]
+
+- name: configure nginx sites
+  template: src=nginx.conf.j2 dest=/etc/nginx/sites-available/proxy mode=0644
+  notify: restart nginx
+  tags: [ 'configure' ]
+
+- name: de-activate default nginx site sites
+  file: path=/etc/nginx/sites-enabled/default state=absent
+  notify: restart nginx
+  tags: [ 'configure' ]
+
+- name: activate proxy nginx sites
+  file: src=/etc/nginx/sites-available/proxy dest=/etc/nginx/sites-enabled/proxy state=link
+  notify: restart nginx
+  tags: [ 'configure' ]
+
+- name: ensure nginx started
+  service: name=nginx state=started enabled=yes
+  tags: [ 'service' ]

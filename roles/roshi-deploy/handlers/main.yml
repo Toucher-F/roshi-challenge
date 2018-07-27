@@ -1,0 +1,4 @@
+---
+# handlers file for roshi
+- name: reboot
+  command: /sbin/reboot
