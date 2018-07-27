@@ -1,0 +1,65 @@
+---
+# tasks file for redis
+- name: install build-essential tcl
+  apt: name={{item}} state=present
+  with_items:
+    - build-essential
+    - tcl
+  tags: [ 'packages' ]
+
+- name: download redis
+  get_url:
+    url: "{{ redis_download_url }}"
+    dest: /usr/local/src/
+  when: not redis_tarball
+
+- name: extract redis tarball
+  unarchive:
+    src: /usr/local/src/redis-{{ redis_version }}.tar.gz
+    dest: /usr/local/src/
+    creates: /usr/local/src/redis-{{ redis_version }}/Makefile
+    copy: no
+
+- name: compile redis
+  command: make
+  args:
+    chdir: /usr/local/src/redis-{{ redis_version }}
+    creates: /usr/local/src/redis-{{ redis_version }}/src/redis-server
+
+- name: install redis
+  command: make install
+  args:
+    chdir: /usr/local/src/redis-{{ redis_version }}
+
+- name: copy redis.conf
+  copy:
+    src: /usr/local/src/redis-{{ redis_version }}/redis.conf
+    dest: /etc/redis/
+
+- name: change supervised systemd in redis.conf
+  replace:
+    dest: /etc/redis/redis.conf
+    regexp: '^supervised\sno$'
+    replace: 'supervised systemd'
+    backup: yes
+
+- name: change dir in redis.conf
+  replace:
+    dest: /etc/redis/redis.conf
+    regexp: '^dir\s\.\/$'
+    replace: 'dir /var/lib/redis'
+    backup: no
+
+- name: add redis.service
+  template: src=redis.service.j2 dest=/etc/systemd/system/redis.service
+
+- name: create redis user
+  command: adduser --system --group --no-create-home redis
+
+- name: create redis diretory
+  file:
+    path: /var/lib/redis
+    state: directory
+    mode: 770
+    owner: redis
+    group: redis
