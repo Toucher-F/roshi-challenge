@@ -7,12 +7,17 @@
     - jq
   tags: [ 'packages' ]
 
+- name: check roshi variable
+  shell: cat /root/.bashrc
+  register: bashrc_result
+
 - name: add go env variable
   blockinfile:
-    dest: /etc/profile
+    dest: /root/.bashrc
     block: |
       export GOPATH=$HOME/go
       export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+  when: bashrc_result.stdout.find('GOPATH') == -1
   register: go_env
 
 - name:  copying roshi file
@@ -23,17 +28,31 @@
     owner: root
     mode: 0777
 
-- name: add roshi-server env variable
-  lineinfile:
-    dest: /etc/profile
-    line: 'export PATH=/src/roshi/roshi-server:$PATH'
-    insertbefore: EOF
+- name: roshi variable configuration /root/.bashrc file
+  shell: /bin/echo {{ item }} >> /root/.bashrc
+  when: bashrc_result.stdout.find('roshi-server') == -1
+  with_items:
+     - export PATH=/src/roshi/roshi-server:$PATH
   register: roshi_env
+
+- name: check rclocal variable
+  shell: cat /etc/rc.local
+  register: rclocal_result
+
+- name: add auto start of roshi
+  lineinfile:
+    dest: /etc/rc.local
+    line:
+      /src/roshi/roshi-server/roshi-server -redis.instances=localhost:6379 &
+    insertbefore: ^exit
+  when: rclocal_result.stdout.find('roshi-server') == -1
+  register: rclocal
 
 - name: reboot immediately if there was a change.
   shell: "sleep 5 && reboot"
   async: 1
   poll: 0
+  when: (roshi_env is changed) or (go_env is changed) or (rclocal is changed)
 
 - name: wait for the reboot to complete if there was a change.
   wait_for_connection:
@@ -41,3 +60,4 @@
     sleep: 5
     delay: 5
     timeout: 300
+  when: (roshi_env is changed) or (go_env is changed) or (rclocal is changed)

@@ -58,6 +58,13 @@
     replace: 'dir /var/lib/redis'
     backup: no
 
+- name: change bind in redis.conf
+  replace:
+    dest: /etc/redis/redis.conf
+    regexp: '^bind\s127\.0\.0\.1\/$'
+    replace: 'bind 172.31.0.0'
+    backup: no
+
 - name: add redis.service
   template: src=redis.service.j2 dest=/etc/systemd/system/redis.service
 
@@ -80,6 +87,9 @@
     mode: 0770
     owner: redis
     group: redis
+
+- name: enable redis autostart 
+  command: systemctl enable redis
 
 - name: start redis service
   service: name=redis state=started
