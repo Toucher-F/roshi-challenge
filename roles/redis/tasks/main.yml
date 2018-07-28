@@ -80,3 +80,6 @@
     mode: 0770
     owner: redis
     group: redis
+
+- name: start redis service
+  service: name=redis state=started
