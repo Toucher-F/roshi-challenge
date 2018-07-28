@@ -9,15 +9,11 @@
 
 - name: add go env variable
   blockinfile:
-    dest: /root/.bashrc
+    dest: /etc/profile
     block: |
       export GOPATH=$HOME/go
       export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
-  tags: [ 'configure' ]
-
-- name: source bashrc
-  become: no
-  shell: . /root/.bashrc
+  register: go_env
 
 - name:  copying roshi file
   copy:
@@ -27,34 +23,21 @@
     owner: root
     mode: 0777
 
-
-- name: add roshi-server env variable
-  lineinfile:
-    dest: /root/.bashrc
-    line: 'export PATH=/src/roshi/roshi-server:$PATH'
-    insertbefore: EOF
-  tags: [ 'configure' ]
-
 - name: add roshi-server env variable
   lineinfile:
     dest: /etc/profile
     line: 'export PATH=/src/roshi/roshi-server:$PATH'
     insertbefore: EOF
-  register: task_result
-  tags: [ 'bashrc' ]
+  register: roshi_env
 
-- name: Reboot immediately if there was a change.
+- name: reboot immediately if there was a change.
   shell: "sleep 5 && reboot"
   async: 1
   poll: 0
-  when: task_result is changed
-  tags: [ 'bashrc' ]
 
-- name: wait for connection
-  wait_for:
-    host: 172.31.10.93
-    port: 22
-    delay: 15
-    timeout: 60
-    state: started
-  tags: [ 'bashrc' ]
+- name: wait for the reboot to complete if there was a change.
+  wait_for_connection:
+    connect_timeout: 20
+    sleep: 5
+    delay: 5
+    timeout: 300
