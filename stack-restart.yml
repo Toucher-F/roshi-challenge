@@ -1,0 +1,41 @@
+---
+# Bring stack down
+- hosts: proxy
+  become: true
+  gather_facts: false
+  tasks:
+    - service: name=nginx state=stopped
+    - wait_for: port=80 state=drained
+
+
+- hosts: roshi
+  become: true
+  gather_facts: false
+  tasks:
+    - command: killall roshi-server
+      ignore_errors: yes
+    - wait_for: port=6302 state=stopped
+
+
+# Restart redis
+- hosts: redis
+  become: true
+  tasks:
+    - service: name=redis state=restarted
+    - wait_for: host={{ ansible_eth0.ipv4.address }} port=6379 state=started
+# Bring stack up
+
+- hosts: roshi
+  become: true
+  gather_facts: false
+  tasks:
+    - shell: "/src/roshi/roshi-server/roshi-server -redis.instances={{ hostvars['redis01']['ansible_eth0']['ipv4']['address'] }}:6379 >/dev/null 2>&1 &)"
+      async: 10
+      poll: 0
+    - wait_for: port=6302
+
+- hosts: proxy
+  become: true
+  tasks:
+    - service: name=nginx state=started
+    - wait_for: port=80
