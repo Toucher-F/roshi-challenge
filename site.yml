@@ -8,6 +8,7 @@
       tags: [ 'packages' ]
 
 - import_playbook: control.yml
-- import_playbook: proxy.yml
-- import_playbook: roshi.yml
 - import_playbook: redis.yml
+- import_playbook: proxy.yml
+- import_playbook: roshi-build.yml
+- import_playbook: roshi-deploy.yml

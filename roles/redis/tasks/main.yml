@@ -10,26 +10,26 @@
 - name: download redis
   get_url:
     url: "{{ redis_download_url }}"
-    dest: /usr/local/src/
+    dest: "{{ redis_install_dir }}"
   when: not redis_tarball
 
 - name: extract redis tarball
   unarchive:
-    src: /usr/local/src/redis-{{ redis_version }}.tar.gz
-    dest: /usr/local/src/
-    creates: /usr/local/src/redis-{{ redis_version }}/Makefile
+    src: "{{ redis_install_dir }}redis-{{ redis_version }}.tar.gz"
+    dest: "{{ redis_install_dir }}"
+    creates: "{{ redis_install_dir }}redis-{{ redis_version }}/Makefile"
     copy: no
 
 - name: compile redis
   command: make
   args:
-    chdir: /usr/local/src/redis-{{ redis_version }}
-    creates: /usr/local/src/redis-{{ redis_version }}/src/redis-server
+    chdir: "{{ redis_install_dir }}redis-{{ redis_version }}"
+    creates: "{{ redis_install_dir }}redis-{{ redis_version }}/src/redis-server"
 
 - name: install redis
   command: make install
   args:
-    chdir: /usr/local/src/redis-{{ redis_version }}
+    chdir: "{{ redis_install_dir }}redis-{{ redis_version }}"
 
 
 - name: create /etc/redis diretory
@@ -40,7 +40,7 @@
 
 - name: copy redis.conf
   copy:
-    src: /usr/local/src/redis-{{ redis_version }}/redis.conf
+    src: "{{ redis_install_dir }}redis-{{ redis_version }}/redis.conf"
     dest: /etc/redis/
     remote_src: yes
 
@@ -61,8 +61,8 @@
 - name: change bind in redis.conf
   replace:
     dest: /etc/redis/redis.conf
-    regexp: '^bind\s127\.0\.0\.1\/$'
-    replace: 'bind 172.31.0.0'
+    regexp: '^bind\s127\.0\.0\.1$'
+    replace: 'bind {{redis_bind_address}} 127.0.0.1'
     backup: no
 
 - name: add redis.service
@@ -70,13 +70,13 @@
 
 - name: Ensure group redis exists
   group:
-    name: redis
+    name: "{{redis_group}}"
     state: present
 
 - name: create redis user
   user:
-    name: redis
-    group: redis
+    name: "{{redis_user}}"
+    group: "{{redis_group}}"
     createhome: no
     system: yes
 
@@ -85,10 +85,10 @@
     path: /var/lib/redis
     state: directory
     mode: 0770
-    owner: redis
-    group: redis
+    owner: "{{redis_user}}"
+    group: "{{redis_group}}"
 
-- name: enable redis autostart 
+- name: enable redis autostart
   command: systemctl enable redis
 
 - name: start redis service

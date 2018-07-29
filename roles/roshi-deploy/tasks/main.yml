@@ -43,9 +43,9 @@
   lineinfile:
     dest: /etc/rc.local
     line:
-      /src/roshi/roshi-server/roshi-server -redis.instances=localhost:6379 &
+      /src/roshi/roshi-server/roshi-server -redis.instances={{redis_address}}:6379 &
     insertbefore: ^exit
-  when: rclocal_result.stdout.find('roshi-server') == -1
+  when: rclocal_result.stdout.find('{{redis_address}}:6379') == -1
   register: rclocal
 
 - name: reboot immediately if there was a change.
