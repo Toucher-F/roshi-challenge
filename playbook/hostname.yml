@@ -1,6 +1,0 @@
----
-  - hosts: all
-    gather_facts: false
-    tasks:
-      - name: get server hostname
-        command: hostname
