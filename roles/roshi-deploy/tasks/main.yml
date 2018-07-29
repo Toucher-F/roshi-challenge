@@ -20,13 +20,8 @@
   when: bashrc_result.stdout.find('GOPATH') == -1
   register: go_env
 
-- name:  copying roshi file
-  copy:
-    src: /src/roshi
-    dest: /src/
-    group: root
-    owner: root
-    mode: 0777
+- name: copy roshi
+  synchronize: src=/src/roshi dest=/src/
 
 - name: roshi variable configuration /root/.bashrc file
   shell: /bin/echo {{ item }} >> /root/.bashrc
@@ -43,9 +38,9 @@
   lineinfile:
     dest: /etc/rc.local
     line:
-      /src/roshi/roshi-server/roshi-server -redis.instances={{redis_address}}:6379 &
+      /src/roshi/roshi-server/roshi-server -redis.instances={{ redis_address }}:6379 &
     insertbefore: ^exit
-  when: rclocal_result.stdout.find('{{redis_address}}:6379') == -1
+  when: rclocal_result.stdout.find('{{ redis_address }}:6379') == -1
   register: rclocal
 
 - name: reboot immediately if there was a change.
@@ -61,3 +56,16 @@
     delay: 5
     timeout: 300
   when: (roshi_env is changed) or (go_env is changed) or (rclocal is changed)
+
+
+- name: Look for the roshi process
+  shell: ps -ef |  grep roshi | grep -v grep
+  register: process_list
+  changed_when: false
+  ignore_errors: yes
+
+- name: bring up roshi
+  shell: "/src/roshi/roshi-server/roshi-server -redis.instances={{ redis_address }}:6379 >/dev/null 2>&1 &)"
+  async: 10
+  poll: 0
+  when: process_list is failed
