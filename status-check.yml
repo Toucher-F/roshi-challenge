@@ -1,0 +1,34 @@
+---
+- hosts: proxy
+  become: true
+  gather_facts: false
+  tasks:
+    - name: verify nginx service
+      command: service nginx status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: verify nginx is listening on 80
+      wait_for: port=80 timeout=1
+      ignore_errors: yes
+
+- hosts: roshi
+  become: true
+  tasks:
+    - name: Look for the roshi process
+      shell: ps -ef |  grep roshi | grep -v grep
+      register: process_list
+      changed_when: false
+      ignore_errors: yes
+
+- hosts: redis
+  become: true
+  tasks:
+    - name: verify redis service
+      command: service redis status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: verify redis is listening on 6379
+      wait_for: host={{ ansible_eth0.ipv4.address }} port=6379 timeout=1
+      ignore_errors: yes
