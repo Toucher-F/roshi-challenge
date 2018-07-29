@@ -3,7 +3,7 @@ This repo is a set of Ansible playbooks to automate the deployment of proxy, Ros
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+These instructions includes the setup the environment of ansible nodes and the commands of running playbooks.
 
 ### Prerequisites
 
